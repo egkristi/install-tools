@@ -1,8 +1,22 @@
 #!/bin/bash
+set -euo pipefail
 
-. /etc/os-release
-sudo sh -c "echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/x${ID^}_${VERSION_ID}/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list"
-wget -nv -qO - "https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/x${ID^}_${VERSION_ID}/Release.key" | sudo apt-key add -
-sudo apt update -qq
-sudo apt -qq -y install buildah
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+source "${DIR}/common.sh"
+
+info "Installing Buildah..."
+
+case "$PM" in
+  apt)
+    install_deps buildah
+    ;;
+  dnf)
+    sudo dnf install -q -y buildah
+    ;;
+  *)
+    error "Unsupported package manager: $PM"
+    exit 1
+    ;;
+esac
+
 buildah version

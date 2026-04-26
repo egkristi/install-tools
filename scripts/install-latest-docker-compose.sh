@@ -1,6 +1,21 @@
 #!/bin/bash
-. "$(cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)"/common.sh
-sudo apt install -qq -y jq
-sudo wget -nc -qO "/usr/local/bin/docker-compose" "$(wget -qO- https://api.github.com/repos/docker/compose/releases/latest | jq -r ".assets[] | select(.name == \"docker-compose-Linux-${ARCH_X86}\").browser_download_url")"
-sudo chmod +x /usr/local/bin/docker-compose
-docker-compose version
+set -euo pipefail
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+source "${DIR}/common.sh"
+
+info "Installing Docker Compose v2 (plugin)..."
+
+# Docker Compose v2 is now a Docker CLI plugin
+install_deps jq curl
+
+# Get latest release tag
+COMPOSE_VERSION="$(curl -sL https://api.github.com/repos/docker/compose/releases/latest | jq -r '.tag_name')"
+
+DOCKER_CLI_PLUGINS="${HOME}/.docker/cli-plugins"
+mkdir -p "$DOCKER_CLI_PLUGINS"
+
+curl -sL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-${ARCH_X86}" -o "${DOCKER_CLI_PLUGINS}/docker-compose"
+chmod +x "${DOCKER_CLI_PLUGINS}/docker-compose"
+
+docker compose version

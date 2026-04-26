@@ -1,13 +1,25 @@
 #!/bin/bash
+set -euo pipefail
 
-#https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
-wget -nc -q -O "/tmp/awscli-exe-linux-x86_64.zip" "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
-unzip -qq -o /tmp/awscli-exe-linux-x86_64.zip -d /tmp
-sudo /tmp/aws/install -u
-complete -C '/usr/local/bin/aws2_completer' aws
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+source "${DIR}/common.sh"
+
+info "Installing AWS CLI v2..."
+
+# Map arch for AWS CLI download
+case "$ARCH" in
+  amd64) AWS_ARCH="x86_64" ;;
+  arm64) AWS_ARCH="aarch64" ;;
+  *)     error "Unsupported architecture for AWS CLI: $ARCH" ; exit 1 ;;
+esac
+
+wget -q -O "${WORK_DIR}/awscli.zip" "https://awscli.amazonaws.com/awscli-exe-linux-${AWS_ARCH}.zip"
+unzip -qq -o "${WORK_DIR}/awscli.zip" -d "${WORK_DIR}"
+
+if [ -d /usr/local/aws-cli ]; then
+  sudo "${WORK_DIR}/aws/install" --update
+else
+  sudo "${WORK_DIR}/aws/install"
+fi
+
 aws --version
-
-wget -nc -q -O "/tmp/aws-iam-authenticator" "https://amazon-eks.s3-us-west-2.amazonaws.com/1.14.6/2019-08-22/bin/linux/amd64/aws-iam-authenticator" 
-chmod +x /tmp/aws-iam-authenticator
-sudo mv /tmp/aws-iam-authenticator /usr/local/bin/
-aws-iam-authenticator version
